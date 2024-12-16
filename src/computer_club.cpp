@@ -134,11 +134,11 @@ void ComputerClub::ConfigureEventHandler() {
                                                  this, std::placeholders::_1));
 }
 
-void ComputerClub::BeginHandler(Event const& event) {
+void ComputerClub::BeginHandler([[maybe_unused]] Event const& event) {
     os << working_hours_.start << '\n';
 }
 
-void ComputerClub::EndHandler(Event const& event) {
+void ComputerClub::EndHandler([[maybe_unused]] Event const& event) {
     for (Client const& client : clients_) {
         event_manager_.TriggerEvent({working_hours_.end, 11, client});
     }
@@ -225,11 +225,14 @@ void ComputerClub::ClientLeftHandler(Event const& event) {
     }
     auto table_it = std::find(tables_.begin(), tables_.end(), client);
     if (table_it != tables_.end()) {
-        table_times_[table_it - tables_.begin()].back().end = event.event_time;
+        unsigned table_index = table_it - tables_.begin();
+        table_times_[table_index].back().end = event.event_time;
         *table_it = "";
         if (!waiting_queue_.empty()) {
             Client next_client{waiting_queue_.back()};
-            event_manager_.TriggerEvent({event.event_time, 12, next_client});
+            std::string data =
+                next_client + " " + std::to_string(table_index + 1);
+            event_manager_.TriggerEvent({event.event_time, 12, data});
             *table_it = next_client;
             waiting_queue_.pop();
         }
@@ -249,9 +252,11 @@ void ComputerClub::ClosingClientLeftHandler(Event const& event) {
 
 void ComputerClub::QueueClientSitsHandler(Event const& event) {
     os << event.ToString() << '\n';
-    Client client(event.data);
-    auto table_it = std::find(tables_.begin(), tables_.end(), "");
-    *table_it = client;
-    table_times_[table_it - tables_.begin()].push_back(
-        {event.event_time, TimePoint()});
+    Client client;
+    unsigned table_id;
+    std::stringstream ss(event.data);
+    ss >> client;
+    ss >> table_id;
+    tables_[table_id - 1] = client;
+    table_times_[table_id - 1].push_back({event.event_time, TimePoint()});
 }

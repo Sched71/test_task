@@ -1,8 +1,8 @@
-#include "computer_club.h"
-
 #include <fstream>
 
-int main(int argc, char const *argv[]) {
+#include "computer_club.h"
+
+int main() {
     try {
         ComputerClub c("../input", std::cout);
         c.ProcessInput();
@@ -11,4 +11,3 @@ int main(int argc, char const *argv[]) {
     }
     return 0;
 }
-
