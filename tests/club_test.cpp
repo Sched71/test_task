@@ -29,3 +29,47 @@ TEST(Base, ExampleTest) {
     fs.close();
     AssertOutputEqualExpected("tests/test_data/example_out");
 }
+
+TEST(Format, FormatCheckTest1) {
+    EXPECT_ANY_THROW({
+        try {
+            ComputerClub c("tests/test_data/format1", std::cout);
+        } catch(std::exception const& e) {
+            std::cerr << e.what() << '\n';
+            throw;
+        }
+    });
+}
+
+TEST(Format, FormatCheckTest2) {
+    EXPECT_ANY_THROW({
+        try {
+            ComputerClub c("tests/test_data/format2", std::cout);
+        } catch(std::exception const& e) {
+            std::cerr << e.what() << '\n';
+            throw;
+        }
+    });
+}
+
+TEST(Format, FormatCheckTest3) {
+    EXPECT_ANY_THROW({
+        try {
+            ComputerClub c("tests/test_data/format3", std::cout);
+        } catch(std::exception const& e) {
+            std::cerr << e.what() << '\n';
+            throw;
+        }
+    });
+}
+
+TEST(Format, FormatCheckTest4) {
+    EXPECT_ANY_THROW({
+        try {
+            ComputerClub c("tests/test_data/format4", std::cout);
+        } catch(std::exception const& e) {
+            std::cerr << e.what() << '\n';
+            throw;
+        }
+    });
+}
