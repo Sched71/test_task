@@ -16,6 +16,7 @@ class ComputerClub {
 
     explicit ComputerClub(std::string const& input_data, std::ostream& os)
         : input_(input_data), os(os) {
+        CheckInputFormat();
         ParseConfiguration();
         ConfigureEventHandler();
     }
@@ -23,6 +24,7 @@ class ComputerClub {
     void ProcessInput();
 
    private:
+    void CheckInputFormat();
     void ParseConfiguration();
     void ConfigureEventHandler();
 

@@ -3,24 +3,90 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <regex>
 #include <sstream>
 
 #include "event_manager.h"
 
-void ComputerClub::ParseConfiguration() {
-    try {
-        input_ >> tables_amount_;
-        tables_.resize(tables_amount_);
-        input_ >> working_hours_.start;
-        input_ >> working_hours_.end;
-        input_ >> hour_price_;
-        // To later use std::getline
-        input_.ignore();
-    } catch (std::exception const& err) {
-        std::cerr << "Error during configuration parsing. Exactly:\n";
-        std::cerr << err.what() << '\n';
-        throw err;
+Event EventFromString(std::string const& str) {
+    std::istringstream iss(str);
+    Event e;
+    iss >> e.event_time;
+    iss >> e.id;
+    // To skip whitespace for prettier output later
+    iss.ignore();
+    std::getline(iss, e.data);
+    return e;
+}
+
+void ComputerClub::CheckInputFormat() {
+    std::string line;
+    std::regex num("\\b[1-9]\\d*\\b");
+    std::getline(input_, line);
+    if (!std::regex_match(line, num)) {
+        std::string msg =
+            "First line of input supposed to be a number. Given: " + line;
+        throw std::runtime_error(msg);
     }
+    int table_num = std::stoi(line);
+
+    std::string time_regex_str = "([01]?[0-9]|2[0-3]):([0-5][0-9])";
+    std::regex working_time("\\b" + time_regex_str + " " + time_regex_str +
+                            "\\b");
+    std::getline(input_, line);
+    if (!std::regex_match(line, working_time)) {
+        std::string msg =
+            "Second line of input should be time of closing and opening in "
+            "HH:MM format. Given: " + line;
+        throw std::runtime_error(msg);
+    }
+
+    std::getline(input_, line);
+    if (!std::regex_match(line, num)) {
+        std::string msg =
+            "Third line of input supposed to be a number. Given: " + line;
+        throw std::runtime_error(msg);
+    }
+
+    TimePoint previous_event_time{0, 0};
+    std::string client_regex_str("[a-z0-9_-]+");
+    std::regex event("\\b" + time_regex_str + " \\d+ " + client_regex_str +
+                     "( [1-9]\\d*)?\\b");
+    while (std::getline(input_, line)) {
+        if (!std::regex_match(line, event)) {
+            std::string msg = "Incorrect event format. Given: " + line;
+            throw std::runtime_error(msg);
+        }
+        Event e = EventFromString(line);
+        if (e.event_time < previous_event_time) {
+            std::string msg = "Event out of order: " + e.ToString();
+            throw std::runtime_error(msg);
+        }
+        previous_event_time = e.event_time;
+        std::stringstream ss(e.data);
+        Client client;
+        ss >> client;
+        if (!ss.eof()) {
+            int table_id;
+            ss >> table_id;
+            if (table_id > table_num) {
+                std::string msg = "Table id is bigger than table amount: " + e.ToString();
+                throw std::runtime_error(msg);
+            }
+        }
+    }
+    input_.clear();
+    input_.seekg(0, std::ios::beg);
+}
+
+void ComputerClub::ParseConfiguration() {
+    input_ >> tables_amount_;
+    tables_.resize(tables_amount_);
+    input_ >> working_hours_.start;
+    input_ >> working_hours_.end;
+    input_ >> hour_price_;
+    // To later use std::getline
+    input_.ignore();
 }
 
 void ComputerClub::ProcessInput() {
@@ -28,28 +94,9 @@ void ComputerClub::ProcessInput() {
     std::string line;
     TimePoint previous_event_time{0, 0};
     while (std::getline(input_, line)) {
-        try {
-            std::istringstream iss(line);
-            Event e;
-            iss >> e.event_time;
-            iss >> e.id;
-            // To skip whitespace for prettier output later
-            iss.ignore();
-            std::getline(iss, e.data);
-
-            if (e.event_time < previous_event_time) {
-                std::string error_msg = "Event out of order: " + e.ToString();
-                throw std::runtime_error(error_msg);
-            }
-
-            event_manager_.QueueEvent(e);
-            previous_event_time = e.event_time;
-
-        } catch (std::exception const& err) {
-            std::cerr << "Error during processing input events:\n";
-            std::cerr << err.what() << '\n';
-            throw err;
-        }
+        Event e = EventFromString(line);
+        event_manager_.QueueEvent(e);
+        previous_event_time = e.event_time;
     }
     event_manager_.QueueEvent({TimePoint{}, 0, ""});
 }
