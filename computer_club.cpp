@@ -82,6 +82,7 @@ void ComputerClub::CheckInputFormat() {
 void ComputerClub::ParseConfiguration() {
     input_ >> tables_amount_;
     tables_.resize(tables_amount_);
+    table_times_.resize(tables_amount_);
     input_ >> working_hours_.start;
     input_ >> working_hours_.end;
     input_ >> hour_price_;
@@ -142,6 +143,21 @@ void ComputerClub::EndHandler(Event const& event) {
         event_manager_.TriggerEvent({working_hours_.end, 11, client});
     }
     os << working_hours_.end << '\n';
+    int table_id = 1;
+    for (std::vector<Timespan> const& table_timespans : table_times_) {
+        unsigned int income = 0;
+        TimePoint time_spent{0, 0};
+        for (Timespan const& timespan : table_timespans) {
+            TimePoint diff = timespan.Difference();
+            income += hour_price_ * diff.hours;
+            if (diff.minutes != 0) {
+                income += hour_price_;
+            }
+            time_spent.Add(diff);
+        }
+        os << table_id << " " << income << " " << time_spent << '\n';
+        ++table_id;
+    }
 }
 
 void ComputerClub::ErrorHandler(Event const& event) {
@@ -179,8 +195,10 @@ void ComputerClub::ClientSitsDownHandler(Event const& event) {
     auto table_it = std::find(tables_.begin(), tables_.end(), client);
     if (table_it != tables_.end()) {
         *table_it = "";
+        table_times_[table_it - tables_.begin()].back().end = event.event_time;
     }
     tables_[table_id - 1] = client;
+    table_times_[table_id - 1].push_back({event.event_time, TimePoint()});
 }
 
 void ComputerClub::ClientWaitsHandler(Event const& event) {
@@ -207,6 +225,7 @@ void ComputerClub::ClientLeftHandler(Event const& event) {
     }
     auto table_it = std::find(tables_.begin(), tables_.end(), client);
     if (table_it != tables_.end()) {
+        table_times_[table_it - tables_.begin()].back().end = event.event_time;
         *table_it = "";
         if (!waiting_queue_.empty()) {
             Client next_client{waiting_queue_.back()};
@@ -220,8 +239,19 @@ void ComputerClub::ClientLeftHandler(Event const& event) {
 
 void ComputerClub::ClosingClientLeftHandler(Event const& event) {
     os << event.ToString() << '\n';
+    Client client(event.data);
+    auto table_it = std::find(tables_.begin(), tables_.end(), client);
+    if (table_it != tables_.end()) {
+        *table_it = "";
+        table_times_[table_it - tables_.begin()].back().end = event.event_time;
+    }
 }
 
 void ComputerClub::QueueClientSitsHandler(Event const& event) {
     os << event.ToString() << '\n';
+    Client client(event.data);
+    auto table_it = std::find(tables_.begin(), tables_.end(), "");
+    *table_it = client;
+    table_times_[table_it - tables_.begin()].push_back(
+        {event.event_time, TimePoint()});
 }

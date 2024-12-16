@@ -52,5 +52,6 @@ class ComputerClub {
     std::queue<Client> waiting_queue_;
     // Index in vector == TableId - 1
     std::vector<Client> tables_;
+    std::vector<std::vector<Timespan>> table_times_;
     EventManager event_manager_;
 };
