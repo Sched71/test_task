@@ -16,6 +16,9 @@ class ComputerClub {
 
     explicit ComputerClub(std::string const& input_data, std::ostream& os)
         : input_(input_data), os(os) {
+        if (!input_.is_open()) {
+            throw std::runtime_error("Could not open the file");
+        }
         CheckInputFormat();
         ParseConfiguration();
         ConfigureEventHandler();

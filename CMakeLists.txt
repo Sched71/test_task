@@ -13,4 +13,6 @@ set(DEBUG_BUILD_OPTS "-O0"
 add_compile_options("$<$<CONFIG:Debug>:${DEBUG_BUILD_OPTS}>")
 add_compile_options("$<$<CONFIG:Release>:${RELEASE_BUILD_OPTS}>")   
 
+add_subdirectory("googletest")
+add_subdirectory("tests")
 add_subdirectory("src")

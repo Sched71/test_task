@@ -1,0 +1,1 @@
+./build/tests/club_test
