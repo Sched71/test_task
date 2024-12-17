@@ -30,6 +30,17 @@ TEST(Base, ExampleTest) {
     AssertOutputEqualExpected("tests/test_data/example_out");
 }
 
+TEST(Base, ErrorTest) {
+    std::fstream fs("tests/output", std::ios::out | std::ios::trunc);
+    {
+        ComputerClub c("tests/test_data/errors_in", fs);
+        c.ProcessInput();
+    }
+    fs.close();
+    AssertOutputEqualExpected("tests/test_data/errors_out");
+}
+
+
 TEST(Format, FormatCheckTest1) {
     EXPECT_ANY_THROW({
         try {
